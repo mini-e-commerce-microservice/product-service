@@ -3,8 +3,9 @@ package primitive
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"github.com/google/uuid"
-	"strings"
+	"github.com/mini-e-commerce-microservice/product-service/internal/util"
 	"time"
 )
 
@@ -35,19 +36,14 @@ type NewPresignedFileUploadInput struct {
 	ChecksumSHA256   string
 }
 
-func (v NewPresignedFileUploadInput) extension() string {
-	if v.MimeType == MimeTypeJpeg {
-		splitFileName := strings.Split(v.OriginalFileName, ".")
-		return "." + splitFileName[len(splitFileName)-1]
-	}
-	return MapMimeTypeExtensions[v.MimeType]
-}
-
 func NewPresignedFileUpload(input NewPresignedFileUploadInput) (output PresignedFileUpload, err error) {
 	if !input.MimeType.IsValid() {
 		return output, errors.New("mime type " + string(input.MimeType) + " is not allowed")
 	}
-	extension := input.extension()
+	if util.BytesToMB(input.Size) > input.MimeType.MediaMaxSize() {
+		return output, fmt.Errorf("file size %d exceeds the maximum allowed size %d for media type %s", input.Size, int64(input.MimeType.MediaMaxSize()), input.MimeType)
+	}
+	extension := input.MimeType.Extension()
 	uuidString := uuid.New().String()
 	generatedFileName := uuidString + extension
 	if flag.Lookup("test.v") != nil {

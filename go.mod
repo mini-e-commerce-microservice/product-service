@@ -6,12 +6,13 @@ require (
 	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/SyaibanAhmadRamadhan/go-s3-wrapper v1.240914.1119 // indirect
 	github.com/SyaibanAhmadRamadhan/go-s3-wrapper/minio v1.240914.1121 // indirect
-	github.com/SyaibanAhmadRamadhan/http-wrapper v1.241004.1117 // indirect
+	github.com/SyaibanAhmadRamadhan/http-wrapper v1.241010.1031 // indirect
 	github.com/SyaibanAhmadRamadhan/sqlx-wrapper v1.241008.2041 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
 	github.com/go-chi/chi/v5 v5.1.0 // indirect
+	github.com/go-chi/cors v1.2.1 // indirect
 	github.com/go-faker/faker/v4 v4.5.0 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
@@ -23,6 +24,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/schema v1.4.1 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0 // indirect
+	github.com/guregu/null/v5 v5.0.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.1 // indirect
 	github.com/hashicorp/go-rootcerts v1.0.2 // indirect

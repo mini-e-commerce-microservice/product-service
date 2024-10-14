@@ -6,3 +6,280 @@ info:
 servers:
   - url: http://localhost:3003
 paths:
+  /v/products:
+    post:
+      operationId: V1ProductPost
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V1ProductPostRequestBody'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V1ProductPostResponse'
+        '400':
+          description: BAD_REQUEST
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '500':
+          description: INTERNAL SERVER ERROR
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: NOT FOUND
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - product
+components:
+  schemas:
+    V1ProductPostResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        media_uploads:
+          type: array
+          items:
+            $ref: '#/components/schemas/V1ProductPostResponseMediaUpload'
+      required:
+        - id
+        - media_uploads
+    V1ProductPostResponseMediaUpload:
+      type: object
+      properties:
+        media_type:
+          type: string
+          example: image
+        media:
+          $ref: '#/components/schemas/FileUploadResponse'
+      required:
+        - media_type
+        - media
+    V1ProductPostRequestBody:
+      type: object
+      properties:
+        name:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: "required,max=255"
+          example: "laptop acer"
+        sub_category_item_id:
+          type: integer
+          format: int64
+          example: 1
+          x-oapi-codegen-extra-tags:
+            validate: "required"
+        description:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: "required"
+          example: "description"
+        condition:
+          type: string
+          example: "new"
+          x-oapi-codegen-extra-tags:
+            validate: "oneof='new' 'second-hand'"
+        minimum_purchase:
+          type: integer
+          format: int32
+          x-oapi-codegen-extra-tags:
+            validate: "required"
+          example: 30
+        size_guide_image:
+          $ref: '#/components/schemas/FileUploadRequest'
+        variant_name_1:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: "required_with=variant_name_2"
+        variant_name_2:
+          type: string
+        product_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/V1ProductPostRequestBodyProductItem'
+          x-oapi-codegen-extra-tags:
+            validate: "min=1,dive"
+      required:
+        - name
+        - condition
+        - minimum_purchase
+        - description
+        - product_items
+        - sub_category_item
+    V1ProductPostRequestBodyProductItem:
+      type: object
+      properties:
+        variant_value_1:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: "required_with=variant_name_1"
+        variant_value_2:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: "required_with=variant_name_2"
+        price:
+          type: number
+          format: double
+          x-oapi-codegen-extra-tags:
+            validate: "required,min=1"
+          example: 25000
+        stock:
+          type: integer
+          format: int32
+          x-oapi-codegen-extra-tags:
+            validate: "required,min=1"
+          example: 10
+        sku:
+          type: string
+          example: "NO-SKU"
+        weight:
+          type: integer
+          format: int32
+          description: format in gram, for example 30 gram
+          example: 30
+          x-oapi-codegen-extra-tags:
+            validate: "min=1"
+        package_length:
+          type: number
+          format: double
+          example: 10
+          description: format in cm
+          x-oapi-codegen-extra-tags:
+            validate: "min=1"
+        package_width:
+          type: number
+          format: double
+          example: 10
+          description: format in cm
+          x-oapi-codegen-extra-tags:
+            validate: "min=1"
+        package_height:
+          type: number
+          format: double
+          example: 10
+          description: format in cm
+          x-oapi-codegen-extra-tags:
+            validate: "min=1"
+        is_active:
+          type: boolean
+          example: true
+          description: if product has one, by default is primary key. if is primary key by default
+          x-oapi-codegen-extra-tags:
+            validate: "required_if=is_primary_product true"
+        is_primary_product:
+          type: boolean
+          example: true
+          description: if product has one, by default is primary key
+        medias:
+          type: array
+          items:
+            $ref: '#/components/schemas/V1ProductPostRequestBodyProductItemMedia'
+          x-oapi-codegen-extra-tags:
+            validate: "min=1,dive"
+      required:
+        - price
+        - stock
+        - weight
+        - package_length
+        - package_width
+        - package_height
+        - is_active
+        - is_primary_product
+        - medias
+    V1ProductPostRequestBodyProductItemMedia:
+      type: object
+      properties:
+        media:
+          $ref: '#/components/schemas/FileUploadRequest'
+        is_primary_image:
+          type: boolean
+      required:
+        - media
+        - media_type
+        - is_primary_image
+    FileUploadRequest:
+      type: object
+      properties:
+        checksum_sha256:
+          type: string
+          description: sha256 checksum file
+          x-oapi-codegen-extra-tags:
+            binding: required
+        identifier:
+          type: string
+          description: identifier
+          x-oapi-codegen-extra-tags:
+            binding: required
+        mime_type:
+          type: string
+          description: 'common mime type: https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types'
+          x-oapi-codegen-extra-tags:
+            binding: required
+        original_filename:
+          type: string
+          description: original filename
+          x-oapi-codegen-extra-tags:
+            binding: required
+        size:
+          type: integer
+          format: int64
+          description: sizes in bytes
+          x-oapi-codegen-extra-tags:
+            binding: required
+      required:
+        - checksum_sha256
+        - identifier
+        - mime_type
+        - original_filename
+        - size
+    FileUploadResponse:
+      type: object
+      properties:
+        identifier:
+          type: string
+          description: identifier response from request
+        upload_expired_at:
+          type: string
+          format: date-time
+        upload_url:
+          type: string
+        minio_form_data:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+        - identifier
+        - upload_expired_at
+        - upload_url
+        - minio_form_data
+    Error400:
+      type: object
+      properties:
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+      required:
+        - errors
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
