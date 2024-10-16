@@ -40,7 +40,7 @@ func (m MimeType) MediaType() string {
 	case MimeTypePng, MimeTypeJpeg, MimeTypeGif, MimeTypeJpg:
 		return "image"
 	case MimeTypeMP4:
-		return "video/mp4"
+		return "video"
 	default:
 		return ""
 	}

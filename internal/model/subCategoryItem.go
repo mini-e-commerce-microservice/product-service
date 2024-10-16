@@ -2,7 +2,7 @@ package model
 
 import "time"
 
-type SubCategoryItems struct {
+type SubCategoryItem struct {
 	ID            int64      `db:"id"`
 	CategoryID    int64      `db:"category_id"`
 	SubCategoryID int64      `db:"sub_category_id"`

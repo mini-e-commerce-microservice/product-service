@@ -15,8 +15,8 @@ paths:
             schema:
               $ref: '#/components/schemas/V1ProductPostRequestBody'
       responses:
-        200:
-          description: OK
+        201:
+          description: CREATED
           content:
             application/json:
               schema:
@@ -53,21 +53,10 @@ components:
         media_uploads:
           type: array
           items:
-            $ref: '#/components/schemas/V1ProductPostResponseMediaUpload'
+            $ref: '#/components/schemas/FileUploadResponse'
       required:
         - id
         - media_uploads
-    V1ProductPostResponseMediaUpload:
-      type: object
-      properties:
-        media_type:
-          type: string
-          example: image
-        media:
-          $ref: '#/components/schemas/FileUploadResponse'
-      required:
-        - media_type
-        - media
     V1ProductPostRequestBody:
       type: object
       properties:
@@ -112,13 +101,20 @@ components:
             $ref: '#/components/schemas/V1ProductPostRequestBodyProductItem'
           x-oapi-codegen-extra-tags:
             validate: "min=1,dive"
+        medias:
+          type: array
+          items:
+            $ref: '#/components/schemas/V1ProductPostRequestBodyProductItemMedia'
+          x-oapi-codegen-extra-tags:
+            validate: "min=1,dive"
       required:
         - name
         - condition
         - minimum_purchase
         - description
         - product_items
-        - sub_category_item
+        - sub_category_item_id
+        - medias
     V1ProductPostRequestBodyProductItem:
       type: object
       properties:
@@ -183,12 +179,8 @@ components:
           type: boolean
           example: true
           description: if product has one, by default is primary key
-        medias:
-          type: array
-          items:
-            $ref: '#/components/schemas/V1ProductPostRequestBodyProductItemMedia'
-          x-oapi-codegen-extra-tags:
-            validate: "min=1,dive"
+        image:
+          $ref: '#/components/schemas/FileUploadRequest'
       required:
         - price
         - stock
@@ -198,18 +190,17 @@ components:
         - package_height
         - is_active
         - is_primary_product
-        - medias
     V1ProductPostRequestBodyProductItemMedia:
       type: object
       properties:
         media:
           $ref: '#/components/schemas/FileUploadRequest'
-        is_primary_image:
+        is_primary_media:
           type: boolean
       required:
         - media
         - media_type
-        - is_primary_image
+        - is_primary_media
     FileUploadRequest:
       type: object
       properties:

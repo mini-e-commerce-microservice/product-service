@@ -3,14 +3,22 @@ package handler
 import (
 	whttp "github.com/SyaibanAhmadRamadhan/http-wrapper"
 	"github.com/go-chi/chi/v5"
+	"github.com/mini-e-commerce-microservice/product-service/internal/service/product"
 )
 
 type handler struct {
 	r        *chi.Mux
 	httpOtel *whttp.Opentelemetry
+	serv     serv
 }
 
-type Opt struct{}
+type serv struct {
+	productService product.Service
+}
+
+type Opt struct {
+	ProductService product.Service
+}
 
 func Init(r *chi.Mux, opt Opt) {
 	h := &handler{
@@ -20,6 +28,9 @@ func Init(r *chi.Mux, opt Opt) {
 			whttp.WithPropagator(),
 			whttp.WithValidator(nil, nil),
 		),
+		serv: serv{
+			productService: opt.ProductService,
+		},
 	}
 	h.route()
 }
