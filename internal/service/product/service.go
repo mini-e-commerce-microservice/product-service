@@ -4,6 +4,7 @@ import (
 	s3wrapper "github.com/SyaibanAhmadRamadhan/go-s3-wrapper"
 	wsqlx "github.com/SyaibanAhmadRamadhan/sqlx-wrapper"
 	"github.com/mini-e-commerce-microservice/product-service/generated/proto/secret_proto"
+	"github.com/mini-e-commerce-microservice/product-service/internal/repositories/outbox"
 	"github.com/mini-e-commerce-microservice/product-service/internal/repositories/product_medias"
 	"github.com/mini-e-commerce-microservice/product-service/internal/repositories/product_variant_items"
 	"github.com/mini-e-commerce-microservice/product-service/internal/repositories/product_variant_values"
@@ -19,6 +20,7 @@ type service struct {
 	productVariantRepository      product_variants.Repository
 	productVariantItemRepository  product_variant_items.Repository
 	productVariantValueRepository product_variant_values.Repository
+	outboxRepository              outbox.Repository
 	s3                            s3wrapper.S3Client
 	dbTransaction                 wsqlx.Tx
 
@@ -33,6 +35,7 @@ type ServiceOption struct {
 	ProductVariantRepository      product_variants.Repository
 	ProductVariantItemRepository  product_variant_items.Repository
 	ProductVariantValueRepository product_variant_values.Repository
+	OutboxRepository              outbox.Repository
 	S3                            s3wrapper.S3Client
 	DBTransaction                 wsqlx.Tx
 
@@ -48,6 +51,7 @@ func New(opt ServiceOption) *service {
 		productVariantRepository:      opt.ProductVariantRepository,
 		productVariantItemRepository:  opt.ProductVariantItemRepository,
 		productVariantValueRepository: opt.ProductVariantValueRepository,
+		outboxRepository:              opt.OutboxRepository,
 		s3:                            opt.S3,
 		dbTransaction:                 opt.DBTransaction,
 		minioConf:                     opt.MinioConf,

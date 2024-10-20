@@ -5,6 +5,10 @@ import (
 	wsqlx "github.com/SyaibanAhmadRamadhan/sqlx-wrapper"
 )
 
+type AggregateType string
+
+const AggregateTypeProduct AggregateType = "aggregate_product"
+
 type repository struct {
 	rdbms wsqlx.Rdbms
 	sq    squirrel.StatementBuilderType

@@ -3,13 +3,15 @@ package handler
 import (
 	whttp "github.com/SyaibanAhmadRamadhan/http-wrapper"
 	"github.com/go-chi/chi/v5"
+	"github.com/mini-e-commerce-microservice/product-service/generated/proto/secret_proto"
 	"github.com/mini-e-commerce-microservice/product-service/internal/service/product"
 )
 
 type handler struct {
-	r        *chi.Mux
-	httpOtel *whttp.Opentelemetry
-	serv     serv
+	r                  *chi.Mux
+	httpOtel           *whttp.Opentelemetry
+	serv               serv
+	jwtAccessTokenConf *secret_proto.JwtAccessToken
 }
 
 type serv struct {
@@ -17,7 +19,8 @@ type serv struct {
 }
 
 type Opt struct {
-	ProductService product.Service
+	ProductService     product.Service
+	JwtAccessTokenConf *secret_proto.JwtAccessToken
 }
 
 func Init(r *chi.Mux, opt Opt) {
@@ -28,6 +31,7 @@ func Init(r *chi.Mux, opt Opt) {
 			whttp.WithPropagator(),
 			whttp.WithValidator(nil, nil),
 		),
+		jwtAccessTokenConf: opt.JwtAccessTokenConf,
 		serv: serv{
 			productService: opt.ProductService,
 		},

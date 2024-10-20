@@ -29,7 +29,7 @@ generate: api/api.yml generate_mocks generate_protobuf
 	oapi-codegen --package api -generate types $< > generated/api/api-types.gen.go
 
 force:
-	@$(MIGRATE_CMD) -path migrations -database=$(DB_DSN) force 20241009165255
+	@$(MIGRATE_CMD) -path migrations -database=$(DB_DSN) force 20241018182010
 
 create:
 	@$(MIGRATE_CMD) create -ext sql -dir $(MIGRATE_DIR) $(NAME)

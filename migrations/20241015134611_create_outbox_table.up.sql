@@ -1,6 +1,6 @@
 CREATE TABLE outbox
 (
-    id             BIGINT PRIMARY KEY AUTO_INCREMENT,
+    id             bigserial PRIMARY KEY,
     aggregate_id   BIGINT       NOT NULL,
     aggregate_type VARCHAR(255) NOT NULL,
     payload        JSON         NOT NULL,

@@ -9,6 +9,11 @@ import (
 )
 
 func (h *handler) V1ProductPost(w http.ResponseWriter, r *http.Request) {
+	userData, ok := h.getUserFromBearerAuth(w, r)
+	if !ok {
+		return
+	}
+
 	req := api.V1ProductPostRequestBody{}
 	if !h.httpOtel.BindBodyRequest(w, r, &req) {
 		return
@@ -33,6 +38,7 @@ func (h *handler) V1ProductPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	createProductInput := product.CreateProductInput{
+		UserID:            userData.UserId,
 		SubCategoryItemID: req.SubCategoryItemId,
 		Condition:         req.Condition,
 		MinimumPurchase:   req.MinimumPurchase,
@@ -42,6 +48,7 @@ func (h *handler) V1ProductPost(w http.ResponseWriter, r *http.Request) {
 		VariantName2:      null.StringFromPtr(req.VariantName2),
 		ProductItems:      make([]product.CreateProductInputProductItem, 0),
 		SizeGuide:         null.ValueFromPtr(sizeGuideFileUpload),
+		Medias:            medias,
 	}
 
 	for _, item := range req.ProductItems {
@@ -68,19 +75,24 @@ func (h *handler) V1ProductPost(w http.ResponseWriter, r *http.Request) {
 
 	outputCreateProduct, err := h.serv.productService.CreateProduct(r.Context(), createProductInput)
 	if err != nil {
-		if errors.Is(err, product.ErrOnlyChooseOnePrimaryProduct) {
+		switch {
+		case errors.Is(err, product.ErrOnlyChooseOnePrimaryProduct):
 			h.httpOtel.Err(w, r, http.StatusBadRequest, err, product.ErrOnlyChooseOnePrimaryProduct.Error())
-		} else if errors.Is(err, product.ErrOnlyChooseOnePrimaryMedia) {
+		case errors.Is(err, product.ErrOnlyChooseOnePrimaryMedia):
 			h.httpOtel.Err(w, r, http.StatusBadRequest, err, product.ErrOnlyChooseOnePrimaryMedia.Error())
-		} else if errors.Is(err, product.ErrMustHavePrimaryMedia) {
+		case errors.Is(err, product.ErrMustHavePrimaryMedia):
 			h.httpOtel.Err(w, r, http.StatusBadRequest, err, product.ErrMustHavePrimaryMedia.Error())
-		} else if errors.Is(err, product.ErrMustHavePrimaryProduct) {
+		case errors.Is(err, product.ErrMustHavePrimaryProduct):
 			h.httpOtel.Err(w, r, http.StatusBadRequest, err, product.ErrMustHavePrimaryProduct.Error())
-		} else if errors.Is(err, product.ErrInvalidSubCategoryItem) {
+		case errors.Is(err, product.ErrInvalidSubCategoryItem):
 			h.httpOtel.Err(w, r, http.StatusBadRequest, err, product.ErrInvalidSubCategoryItem.Error())
-		} else if errors.Is(err, product.ErrMustHaveSizeGuide) {
+		case errors.Is(err, product.ErrMustHaveSizeGuide):
 			h.httpOtel.Err(w, r, http.StatusBadRequest, err, product.ErrMustHaveSizeGuide.Error())
-		} else {
+		case errors.Is(err, product.ErrVariantValue1IsRequired):
+			h.httpOtel.Err(w, r, http.StatusBadRequest, err, product.ErrVariantValue1IsRequired.Error())
+		case errors.Is(err, product.ErrVariantValue2IsRequired):
+			h.httpOtel.Err(w, r, http.StatusBadRequest, err, product.ErrVariantValue2IsRequired.Error())
+		default:
 			h.httpOtel.Err(w, r, http.StatusInternalServerError, err)
 		}
 		return

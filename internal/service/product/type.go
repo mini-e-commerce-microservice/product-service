@@ -1,13 +1,15 @@
 package product
 
 import (
+	"github.com/SyaibanAhmadRamadhan/go-collection/generic"
 	wsqlx "github.com/SyaibanAhmadRamadhan/sqlx-wrapper"
 	"github.com/guregu/null/v5"
-	"github.com/mini-e-commerce-microservice/product-service/internal/util"
+	"github.com/mini-e-commerce-microservice/product-service/internal/model"
 	"github.com/mini-e-commerce-microservice/product-service/internal/util/primitive"
 )
 
 type CreateProductInput struct {
+	UserID            int64
 	SubCategoryItemID int64
 	Condition         string
 	MinimumPurchase   int32
@@ -22,6 +24,7 @@ type CreateProductInput struct {
 	// fill by business logic
 	isUsedVariant      bool
 	sizeGuideImageName *string
+	subCategoryItem    model.SubCategoryItem
 }
 
 type CreateProductInputProductItem struct {
@@ -82,6 +85,7 @@ type insertProductMediaInputItem struct {
 }
 
 type insertProductVariantValuesInput struct {
+	tx                   wsqlx.Rdbms
 	productVariantID1    int64
 	productVariantID2    int64
 	productVariantValue1 []string
@@ -90,5 +94,5 @@ type insertProductVariantValuesInput struct {
 
 type insertProductVariantValuesOutput struct {
 	// key is value variant, value is value variant
-	productVariantValues *util.SafeMap[string, int64]
+	productVariantValues *generic.SafeMap[string, int64]
 }

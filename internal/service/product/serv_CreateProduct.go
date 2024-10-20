@@ -4,11 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"github.com/SyaibanAhmadRamadhan/go-collection"
+	"github.com/SyaibanAhmadRamadhan/go-collection/generic"
 	s3wrapper "github.com/SyaibanAhmadRamadhan/go-s3-wrapper"
 	wsqlx "github.com/SyaibanAhmadRamadhan/sqlx-wrapper"
 	"github.com/guregu/null/v5"
 	"github.com/mini-e-commerce-microservice/product-service/internal/model"
 	"github.com/mini-e-commerce-microservice/product-service/internal/repositories"
+	"github.com/mini-e-commerce-microservice/product-service/internal/repositories/outbox"
 	"github.com/mini-e-commerce-microservice/product-service/internal/repositories/product_medias"
 	"github.com/mini-e-commerce-microservice/product-service/internal/repositories/product_variant_items"
 	"github.com/mini-e-commerce-microservice/product-service/internal/repositories/product_variant_values"
@@ -17,23 +20,23 @@ import (
 	"github.com/mini-e-commerce-microservice/product-service/internal/repositories/sub_category_items"
 	"github.com/mini-e-commerce-microservice/product-service/internal/util"
 	"github.com/mini-e-commerce-microservice/product-service/internal/util/primitive"
-	"github.com/mini-e-commerce-microservice/product-service/internal/util/tracer"
 	"golang.org/x/sync/errgroup"
 	"time"
 )
 
 // CreateProduct
+//
 // List error: ErrOnlyChooseOnePrimaryProduct, ErrOnlyChooseOnePrimaryMedia, ErrMustHavePrimaryMedia, ErrMustHavePrimaryProduct,
-// ErrInvalidSubCategoryItem, ErrMustHaveSizeGuide, ErrVariantValueCannotBeEmpty
+// ErrInvalidSubCategoryItem, ErrMustHaveSizeGuide, ErrVariantValue1IsRequired, ErrVariantValue2IsRequired
 func (s *service) CreateProduct(ctx context.Context, input CreateProductInput) (output CreateProductOutput, err error) {
 	err = s.validateCreateProduct(ctx, &input)
 	if err != nil {
-		return output, tracer.Error(err)
+		return output, collection.Err(err)
 	}
 
 	createPresignedUploadOutput, err := s.createPresignedUploadMediaProduct(ctx, input.toCreatePresignedUploadMediaProductInput())
 	if err != nil {
-		return output, tracer.Error(err)
+		return output, collection.Err(err)
 	}
 	output.MediaUploads = createPresignedUploadOutput.mediaUploads
 	output.OptionalImageUploads = createPresignedUploadOutput.optionalImageUploads
@@ -43,6 +46,7 @@ func (s *service) CreateProduct(ctx context.Context, input CreateProductInput) (
 			outputCreateProduct, err := s.productRepository.Create(ctx, products.CreateInput{
 				Tx: tx,
 				Data: model.Product{
+					UserID:           input.UserID,
 					Name:             input.Name,
 					Description:      input.Description,
 					ProductCondition: input.Condition,
@@ -52,8 +56,9 @@ func (s *service) CreateProduct(ctx context.Context, input CreateProductInput) (
 				},
 			})
 			if err != nil {
-				return tracer.Error(err)
+				return collection.Err(err)
 			}
+			output.ID = outputCreateProduct.ID
 
 			var eg errgroup.Group
 
@@ -64,7 +69,7 @@ func (s *service) CreateProduct(ctx context.Context, input CreateProductInput) (
 					items:     input.toInsertProductMediaInputItems(),
 				})
 				if err != nil {
-					return tracer.Error(err)
+					return collection.Err(err)
 				}
 				return
 			})
@@ -80,7 +85,7 @@ func (s *service) CreateProduct(ctx context.Context, input CreateProductInput) (
 						},
 					})
 					if err != nil {
-						return tracer.Error(err)
+						return collection.Err(err)
 					}
 					return
 				})
@@ -96,46 +101,57 @@ func (s *service) CreateProduct(ctx context.Context, input CreateProductInput) (
 						},
 					})
 					if err != nil {
-						return tracer.Error(err)
+						return collection.Err(err)
 					}
 					return
 				})
 			}
 
 			if err = eg.Wait(); err != nil {
-				return tracer.Error(err)
+				return collection.Err(err)
 			}
 
-			insertVariantValuesInput, err := input.toInsertProductVariantValuesInput(createProductVariant1Output.ID, createProductVariant2Output.ID)
+			insertVariantValuesInput, err := input.toInsertProductVariantValuesInput(tx, createProductVariant1Output.ID, createProductVariant2Output.ID)
 			if err != nil {
-				return tracer.Error(err)
+				return collection.Err(err)
 			}
 			insertVariantValuesOutput, err := s.insertProductVariantValues(ctx, insertVariantValuesInput)
 			if err != nil {
-				return tracer.Error(err)
+				return collection.Err(err)
 			}
 
-			var eg2 errgroup.Group
 			for _, item := range input.ProductItems {
-				eg2.Go(func() (err error) {
+				eg.Go(func() (err error) {
 					item.calculateDimensionalWeight(0)
-					productVariantValue1ID := new(int64)
-					productVariantValue2ID := new(int64)
-					image := new(string)
+					var (
+						productVariantValue1ID       *int64
+						productVariantValue2ID       *int64
+						image                        *string
+						outboxPayloadProductVariant1 *model.OutboxPayloadProductVariant
+						outboxPayloadProductVariant2 *model.OutboxPayloadProductVariant
+					)
 
 					val, ok := insertVariantValuesOutput.productVariantValues.Load(item.VariantValue1.String)
 					if ok {
+						outboxPayloadProductVariant1 = &model.OutboxPayloadProductVariant{
+							Name:  input.VariantName1.String,
+							Value: item.VariantValue1.String,
+						}
 						productVariantValue1ID = &val
 					}
 					val, ok = insertVariantValuesOutput.productVariantValues.Load(item.VariantValue2.String)
 					if ok {
-						productVariantValue1ID = &val
+						outboxPayloadProductVariant2 = &model.OutboxPayloadProductVariant{
+							Name:  input.VariantName2.String,
+							Value: item.VariantValue2.String,
+						}
+						productVariantValue2ID = &val
 					}
 					if item.Image.Valid {
 						image = &item.Image.V.GeneratedFileName
 					}
 
-					_, err = s.productVariantItemRepository.Create(ctx, product_variant_items.CreateInput{
+					productVariantItemCreateOutput, err := s.productVariantItemRepository.Create(ctx, product_variant_items.CreateInput{
 						Tx: tx,
 						Data: model.ProductVariantItem{
 							ProductID:              outputCreateProduct.ID,
@@ -155,21 +171,56 @@ func (s *service) CreateProduct(ctx context.Context, input CreateProductInput) (
 						},
 					})
 					if err != nil {
-						return tracer.Error(err)
+						return collection.Err(err)
 					}
 
+					payloadOutboxProduct := model.OutboxPayloadProduct{
+						ID:                  productVariantItemCreateOutput.ID,
+						UserID:              input.UserID,
+						Variant1:            null.ValueFromPtr(outboxPayloadProductVariant1),
+						Variant2:            null.ValueFromPtr(outboxPayloadProductVariant2),
+						SubCategoryItemName: input.subCategoryItem.Name,
+						Name:                input.Name,
+						Description:         input.Name,
+						Price:               item.Price,
+						Stock:               item.Stock,
+						Sku:                 item.SKU.Ptr(),
+						Weight:              item.Weight,
+						PackageLength:       item.PackageLength,
+						PackageWidth:        item.PackageWidth,
+						PackageHeight:       item.PackageHeight,
+						DimensionalWeight:   item.dimensionalWeight,
+						IsActive:            item.IsActive,
+						ProductCondition:    input.Condition,
+						MinimumPurchase:     input.MinimumPurchase,
+						SizeGuideImage:      input.sizeGuideImageName,
+						CreatedAt:           time.Now().UTC(),
+						UpdatedAt:           time.Now().UTC(),
+					}
+					err = s.outboxRepository.Create(ctx, outbox.CreateInput{
+						Tx: tx,
+						Data: model.Outbox{
+							AggregateID:   productVariantItemCreateOutput.ID,
+							AggregateType: string(outbox.AggregateTypeProduct),
+							Payload:       payloadOutboxProduct,
+							TraceParent:   util.GetTraceParent(ctx),
+						},
+					})
+					if err != nil {
+						return collection.Err(err)
+					}
 					return
 				})
 			}
 
-			if err = eg2.Wait(); err != nil {
-				return tracer.Error(err)
+			if err = eg.Wait(); err != nil {
+				return collection.Err(err)
 			}
 			return
 		},
 	)
 	if err != nil {
-		return output, tracer.Error(err)
+		return output, collection.Err(err)
 	}
 
 	return
@@ -177,7 +228,7 @@ func (s *service) CreateProduct(ctx context.Context, input CreateProductInput) (
 
 func (s *service) insertProductVariantValues(ctx context.Context, input insertProductVariantValuesInput) (output insertProductVariantValuesOutput, err error) {
 	output = insertProductVariantValuesOutput{
-		productVariantValues: &util.SafeMap[string, int64]{},
+		productVariantValues: &generic.SafeMap[string, int64]{},
 	}
 
 	var eg errgroup.Group
@@ -186,13 +237,14 @@ func (s *service) insertProductVariantValues(ctx context.Context, input insertPr
 		for _, value1 := range input.productVariantValue1 {
 			eg.Go(func() (err error) {
 				productVariantValueOutput, err := s.productVariantValueRepository.Create(ctx, product_variant_values.CreateInput{
+					Tx: input.tx,
 					Data: model.ProductVariantValue{
 						ProductVariantID: input.productVariantID1,
 						Value:            value1,
 					},
 				})
 				if err != nil {
-					return tracer.Error(err)
+					return collection.Err(err)
 				}
 
 				output.productVariantValues.Store(value1, productVariantValueOutput.ID)
@@ -205,13 +257,14 @@ func (s *service) insertProductVariantValues(ctx context.Context, input insertPr
 		for _, value2 := range input.productVariantValue2 {
 			eg.Go(func() (err error) {
 				productVariantValueOutput, err := s.productVariantValueRepository.Create(ctx, product_variant_values.CreateInput{
+					Tx: input.tx,
 					Data: model.ProductVariantValue{
 						ProductVariantID: input.productVariantID2,
 						Value:            value2,
 					},
 				})
 				if err != nil {
-					return tracer.Error(err)
+					return collection.Err(err)
 				}
 				output.productVariantValues.Store(value2, productVariantValueOutput.ID)
 				return
@@ -220,7 +273,7 @@ func (s *service) insertProductVariantValues(ctx context.Context, input insertPr
 	}
 
 	if err = eg.Wait(); err != nil {
-		return output, tracer.Error(err)
+		return output, collection.Err(err)
 	}
 	return
 }
@@ -241,7 +294,7 @@ func (s *service) insertProductMedia(ctx context.Context, input insertProductMed
 		Data: productMedias,
 	})
 	if err != nil {
-		err = tracer.Error(err)
+		err = collection.Err(err)
 	}
 
 	return
@@ -266,7 +319,7 @@ func (s *service) createPresignedUploadMediaProduct(ctx context.Context, input c
 					Expired:    10 * time.Minute,
 				})
 				if err != nil {
-					return tracer.Error(err)
+					return collection.Err(err)
 				}
 
 				output.optionalImageUploads = append(output.optionalImageUploads, null.ValueFrom(primitive.PresignedFileUploadOutput{
@@ -290,7 +343,7 @@ func (s *service) createPresignedUploadMediaProduct(ctx context.Context, input c
 				Expired:    10 * time.Minute,
 			})
 			if err != nil {
-				return tracer.Error(err)
+				return collection.Err(err)
 			}
 			output.mediaUploads = append(output.mediaUploads, primitive.PresignedFileUploadOutput{
 				Identifier:      media.Identifier,
@@ -303,7 +356,7 @@ func (s *service) createPresignedUploadMediaProduct(ctx context.Context, input c
 	}
 
 	if err = eg.Wait(); err != nil {
-		return output, tracer.Error(err)
+		return output, collection.Err(err)
 	}
 
 	return
@@ -317,15 +370,22 @@ func (s *service) validateCreateProduct(ctx context.Context, input *CreateProduc
 		// Check for primary product
 		if item.IsPrimaryProduct {
 			if primaryProductIsExist {
-				return tracer.Error(ErrOnlyChooseOnePrimaryProduct)
+				return collection.Err(ErrOnlyChooseOnePrimaryProduct)
 			}
 			havePrimaryProduct = true
 			primaryProductIsExist = true
 		}
+
+		if input.VariantName1.Valid && !item.VariantValue1.Valid {
+			return collection.Err(ErrVariantValue1IsRequired)
+		}
+		if input.VariantName2.Valid && !item.VariantValue2.Valid {
+			return collection.Err(ErrVariantValue2IsRequired)
+		}
 	}
 	// Ensure there is at least one primary product
 	if !havePrimaryProduct {
-		return tracer.Error(ErrMustHavePrimaryProduct)
+		return collection.Err(ErrMustHavePrimaryProduct)
 	}
 
 	// Check for primary media
@@ -334,7 +394,7 @@ func (s *service) validateCreateProduct(ctx context.Context, input *CreateProduc
 	for _, media := range input.Medias {
 		if media.IsPrimary {
 			if primaryMediaIsExist {
-				return tracer.Error(ErrOnlyChooseOnePrimaryMedia)
+				return collection.Err(ErrOnlyChooseOnePrimaryMedia)
 			}
 			havePrimaryMedia = true
 			primaryMediaIsExist = true
@@ -342,7 +402,7 @@ func (s *service) validateCreateProduct(ctx context.Context, input *CreateProduc
 	}
 	// Ensure each product item has a primary media
 	if !havePrimaryMedia {
-		return tracer.Error(ErrMustHavePrimaryMedia)
+		return collection.Err(ErrMustHavePrimaryMedia)
 	}
 
 	// validate sub category item and ensure using size guide if sub category item size_guide is true
@@ -353,14 +413,15 @@ func (s *service) validateCreateProduct(ctx context.Context, input *CreateProduc
 		if errors.Is(err, repositories.ErrDataNotFound) {
 			err = errors.Join(err, ErrInvalidSubCategoryItem)
 		}
-		return tracer.Error(err)
+		return collection.Err(err)
 	}
 	if subCategoryItem.Data.SizeGuide && !input.SizeGuide.Valid {
-		return tracer.Error(ErrMustHaveSizeGuide)
+		return collection.Err(ErrMustHaveSizeGuide)
 	}
 	if subCategoryItem.Data.SizeGuide {
 		input.sizeGuideImageName = &input.SizeGuide.V.GeneratedFileName
 	}
+	input.subCategoryItem = subCategoryItem.Data
 
 	// Check if variant is used
 	if input.VariantName1.Valid {
@@ -400,8 +461,9 @@ func (c CreateProductInput) toCreatePresignedUploadMediaProductInput() createPre
 	return i
 }
 
-func (c CreateProductInput) toInsertProductVariantValuesInput(variantID1, variantID2 int64) (insertProductVariantValuesInput, error) {
+func (c CreateProductInput) toInsertProductVariantValuesInput(tx wsqlx.Rdbms, variantID1, variantID2 int64) (insertProductVariantValuesInput, error) {
 	output := insertProductVariantValuesInput{
+		tx:                   tx,
 		productVariantID1:    variantID1,
 		productVariantID2:    variantID2,
 		productVariantValue1: make([]string, 0),
@@ -420,13 +482,13 @@ func (c CreateProductInput) toInsertProductVariantValuesInput(variantID1, varian
 	for _, item := range c.ProductItems {
 		if variantID1 != 0 {
 			if !item.VariantValue1.Valid {
-				return insertProductVariantValuesInput{}, tracer.Error(ErrVariantValueCannotBeEmpty)
+				return insertProductVariantValuesInput{}, collection.Err(ErrVariantValue1IsRequired)
 			}
 			output.productVariantValue1 = appendUnique(output.productVariantValue1, item.VariantValue1.String)
 		}
 		if variantID2 != 0 {
 			if !item.VariantValue2.Valid {
-				return insertProductVariantValuesInput{}, tracer.Error(ErrVariantValueCannotBeEmpty)
+				return insertProductVariantValuesInput{}, collection.Err(ErrVariantValue2IsRequired)
 			}
 			output.productVariantValue2 = appendUnique(output.productVariantValue2, item.VariantValue2.String)
 		}

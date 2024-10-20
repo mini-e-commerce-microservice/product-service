@@ -3,6 +3,7 @@ CREATE TYPE product_condition AS ENUM ('new', 'second-hand');
 CREATE TABLE products
 (
     id                bigserial primary key,
+    user_id           bigint            not null,
     name              varchar(255)      NOT NULL,
     description       text,
     product_condition product_condition NOT NULL,

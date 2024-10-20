@@ -2,9 +2,9 @@ package product_medias
 
 import (
 	"context"
+	"github.com/SyaibanAhmadRamadhan/go-collection"
 	wsqlx "github.com/SyaibanAhmadRamadhan/sqlx-wrapper"
 	"github.com/mini-e-commerce-microservice/product-service/internal/model"
-	"github.com/mini-e-commerce-microservice/product-service/internal/util/tracer"
 )
 
 func (r *repository) Creates(ctx context.Context, input CreatesInput) (err error) {
@@ -26,7 +26,7 @@ func (r *repository) Creates(ctx context.Context, input CreatesInput) (err error
 
 	_, err = rdbms.ExecSq(ctx, query)
 	if err != nil {
-		return tracer.Error(err)
+		return collection.Err(err)
 	}
 	return
 }

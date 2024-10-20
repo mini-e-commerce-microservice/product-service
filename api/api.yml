@@ -91,10 +91,12 @@ components:
           $ref: '#/components/schemas/FileUploadRequest'
         variant_name_1:
           type: string
+          nullable: true
           x-oapi-codegen-extra-tags:
-            validate: "required_with=variant_name_2"
+            validate: "required_with=variant_name_1"
         variant_name_2:
           type: string
+          nullable: true
         product_items:
           type: array
           items:
@@ -115,17 +117,17 @@ components:
         - product_items
         - sub_category_item_id
         - medias
+        - variant_name_1
+        - variant_name_2
     V1ProductPostRequestBodyProductItem:
       type: object
       properties:
         variant_value_1:
           type: string
-          x-oapi-codegen-extra-tags:
-            validate: "required_with=variant_name_1"
+          nullable: true
         variant_value_2:
           type: string
-          x-oapi-codegen-extra-tags:
-            validate: "required_with=variant_name_2"
+          nullable: true
         price:
           type: number
           format: double

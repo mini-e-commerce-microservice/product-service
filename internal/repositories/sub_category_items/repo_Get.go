@@ -5,11 +5,11 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/Masterminds/squirrel"
+	"github.com/SyaibanAhmadRamadhan/go-collection"
 	wsqlx "github.com/SyaibanAhmadRamadhan/sqlx-wrapper"
 	"github.com/guregu/null/v5"
 	"github.com/mini-e-commerce-microservice/product-service/internal/model"
 	"github.com/mini-e-commerce-microservice/product-service/internal/repositories"
-	"github.com/mini-e-commerce-microservice/product-service/internal/util/tracer"
 )
 
 func (r *repository) Get(ctx context.Context, input GetInput) (output GetOutput, err error) {
@@ -23,7 +23,7 @@ func (r *repository) Get(ctx context.Context, input GetInput) (output GetOutput,
 		if errors.Is(err, sql.ErrNoRows) {
 			err = repositories.ErrDataNotFound
 		}
-		return output, tracer.Error(err)
+		return output, collection.Err(err)
 	}
 	return
 }

@@ -3,12 +3,12 @@ package sub_category_items
 import (
 	"context"
 	"github.com/Masterminds/squirrel"
+	"github.com/SyaibanAhmadRamadhan/go-collection"
 	wsqlx "github.com/SyaibanAhmadRamadhan/sqlx-wrapper"
 	"github.com/guregu/null/v5"
 	"github.com/jmoiron/sqlx"
 	"github.com/mini-e-commerce-microservice/product-service/internal/model"
 	"github.com/mini-e-commerce-microservice/product-service/internal/util/primitive"
-	"github.com/mini-e-commerce-microservice/product-service/internal/util/tracer"
 )
 
 func (r *repository) GetAll(ctx context.Context, input GetAllInput) (output GetAllOutput, err error) {
@@ -33,7 +33,7 @@ func (r *repository) GetAll(ctx context.Context, input GetAllInput) (output GetA
 			data := model.SubCategoryItem{}
 			err = rows.StructScan(&data)
 			if err != nil {
-				return tracer.Error(err)
+				return collection.Err(err)
 			}
 			output.Items = append(output.Items, data)
 		}
@@ -41,7 +41,7 @@ func (r *repository) GetAll(ctx context.Context, input GetAllInput) (output GetA
 		return
 	})
 	if err != nil {
-		return output, tracer.Error(err)
+		return output, collection.Err(err)
 	}
 
 	output.Pagination = primitive.PaginationOutput(paginationOutput)
