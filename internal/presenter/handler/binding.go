@@ -69,7 +69,7 @@ func (h *handler) bindUploadFileResponsePtr(input *primitive.PresignedFileUpload
 		MinioFormData:   input.MinioFormData,
 	}
 }
-func (h *handler) getUserFromBearerAuth(w http.ResponseWriter, r *http.Request) (*jwt_claims_proto.JwtAuthAccessTokenClaims, bool) {
+func (h *handler) getUserFromBearerAuth(w http.ResponseWriter, r *http.Request, mustMerchantUser bool) (*jwt_claims_proto.JwtAuthAccessTokenClaims, bool) {
 	authHeader := r.Header.Get("Authorization")
 	if authHeader == "" {
 		h.httpOtel.Err(w, r, http.StatusUnauthorized, collection.Err(errors.New("authorization header is missing")))
@@ -94,7 +94,7 @@ func (h *handler) getUserFromBearerAuth(w http.ResponseWriter, r *http.Request) 
 		return nil, false
 	}
 
-	if authAccessTokenJWT.RegisterAs != 1 {
+	if authAccessTokenJWT.RegisterAs != 1 && mustMerchantUser {
 		h.httpOtel.Err(w, r, http.StatusForbidden,
 			collection.Err(fmt.Errorf("account with register as %d is not allowed to create products", authAccessTokenJWT.RegisterAs)),
 			"your account is not a seller or merchant",

@@ -9,8 +9,13 @@ import (
 )
 
 func (h *handler) V1ProductPost(w http.ResponseWriter, r *http.Request) {
-	userData, ok := h.getUserFromBearerAuth(w, r)
+	userData, ok := h.getUserFromBearerAuth(w, r, true)
 	if !ok {
+		return
+	}
+
+	if !userData.IsEmailVerified {
+		h.httpOtel.Err(w, r, http.StatusForbidden, errors.New("email user must be verified"), "You must activate your email first")
 		return
 	}
 
