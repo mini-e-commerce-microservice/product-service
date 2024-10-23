@@ -103,8 +103,8 @@ func LoadJwtConf() *secret_proto.Jwt {
 	return jwtConf
 }
 
-func LoadAppConf() *AppConfig {
-	appConf := &AppConfig{}
+func LoadAppConf() *secret_proto.ProductService {
+	appConf := &secret_proto.ProductService{}
 	if flag.Lookup("test.v") != nil {
 		err := faker.FakeData(&appConf)
 		if err != nil {

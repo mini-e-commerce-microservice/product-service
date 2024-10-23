@@ -4,6 +4,7 @@ import (
 	"context"
 	s3_wrapper_minio "github.com/SyaibanAhmadRamadhan/go-s3-wrapper/minio"
 	wsqlx "github.com/SyaibanAhmadRamadhan/sqlx-wrapper"
+	"github.com/mini-e-commerce-microservice/product-service/generated/proto/secret_proto"
 	"github.com/mini-e-commerce-microservice/product-service/internal/conf"
 	"github.com/mini-e-commerce-microservice/product-service/internal/infra"
 	"github.com/mini-e-commerce-microservice/product-service/internal/repositories/outbox"
@@ -22,13 +23,13 @@ type Dependency struct {
 	ProductService product.Service
 }
 
-func NewDependency(appConf *conf.AppConfig) (*Dependency, primitive.CloseFn) {
+func NewDependency(appConf *secret_proto.ProductService) (*Dependency, primitive.CloseFn) {
 	otelConf := conf.LoadOtelConf()
 	minioConf := conf.LoadMinioConf()
 
 	otelCleanup := infra.NewOtel(otelConf, "product-service")
 	minioClient := infra.NewMinio(minioConf)
-	pgdb, pgdbCleanup := infra.NewPostgresql(appConf.DatabaseDSN)
+	pgdb, pgdbCleanup := infra.NewPostgresql(appConf.DatabaseDsn)
 	rdbms := wsqlx.NewRdbms(pgdb, wsqlx.WithAttributes(semconv.DBSystemPostgreSQL))
 	s3Minio := s3_wrapper_minio.New(minioClient)
 
