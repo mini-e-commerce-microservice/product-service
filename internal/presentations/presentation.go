@@ -1,4 +1,4 @@
-package presenter
+package presentations
 
 import (
 	"fmt"
@@ -6,8 +6,8 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/mini-e-commerce-microservice/product-service/generated/proto/secret_proto"
-	"github.com/mini-e-commerce-microservice/product-service/internal/presenter/handler"
-	"github.com/mini-e-commerce-microservice/product-service/internal/service/product"
+	"github.com/mini-e-commerce-microservice/product-service/internal/presentations/handler"
+	"github.com/mini-e-commerce-microservice/product-service/internal/services/product"
 	"net/http"
 	"time"
 )

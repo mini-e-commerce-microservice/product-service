@@ -4,7 +4,7 @@ import (
 	"errors"
 	"github.com/guregu/null/v5"
 	"github.com/mini-e-commerce-microservice/product-service/generated/api"
-	"github.com/mini-e-commerce-microservice/product-service/internal/service/product"
+	"github.com/mini-e-commerce-microservice/product-service/internal/services/product"
 	"net/http"
 )
 

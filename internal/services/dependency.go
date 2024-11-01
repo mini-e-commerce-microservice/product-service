@@ -1,4 +1,4 @@
-package service
+package services
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 	"github.com/mini-e-commerce-microservice/product-service/internal/repositories/product_variants"
 	"github.com/mini-e-commerce-microservice/product-service/internal/repositories/products"
 	"github.com/mini-e-commerce-microservice/product-service/internal/repositories/sub_category_items"
-	"github.com/mini-e-commerce-microservice/product-service/internal/service/product"
+	"github.com/mini-e-commerce-microservice/product-service/internal/services/product"
 	"github.com/mini-e-commerce-microservice/product-service/internal/util/primitive"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
@@ -27,7 +27,7 @@ func NewDependency(appConf *secret_proto.ProductService) (*Dependency, primitive
 	otelConf := conf.LoadOtelConf()
 	minioConf := conf.LoadMinioConf()
 
-	otelCleanup := infra.NewOtel(otelConf, "product-service")
+	otelCleanup := infra.NewOtel(otelConf, "product-services")
 	minioClient := infra.NewMinio(minioConf)
 	pgdb, pgdbCleanup := infra.NewPostgresql(appConf.DatabaseDsn)
 	rdbms := wsqlx.NewRdbms(pgdb, wsqlx.WithAttributes(semconv.DBSystemPostgreSQL))

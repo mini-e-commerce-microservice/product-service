@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"github.com/mini-e-commerce-microservice/product-service/internal/conf"
-	"github.com/mini-e-commerce-microservice/product-service/internal/presenter"
-	"github.com/mini-e-commerce-microservice/product-service/internal/service"
+	"github.com/mini-e-commerce-microservice/product-service/internal/presentations"
+	"github.com/mini-e-commerce-microservice/product-service/internal/services"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"net/http"
@@ -14,15 +14,15 @@ import (
 )
 
 var restApiCmd = &cobra.Command{
-	Use:   "rest-api",
+	Use:   "restApi",
 	Short: "run rest api",
 	Run: func(cmd *cobra.Command, args []string) {
 		appConf := conf.LoadAppConf()
 		jwtConf := conf.LoadJwtConf()
 
-		dependency, closeFn := service.NewDependency(appConf)
+		dependency, closeFn := services.NewDependency(appConf)
 
-		server := presenter.New(&presenter.Presenter{
+		server := presentations.New(&presentations.Presenter{
 			ProductService:     dependency.ProductService,
 			JwtAccessTokenConf: jwtConf.AccessToken,
 			Port:               int(appConf.AppPort),
@@ -34,7 +34,7 @@ var restApiCmd = &cobra.Command{
 		go func() {
 			if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 				log.Err(err).Msg("failed listen serve")
-				ctx.Done()
+				stop()
 			}
 		}()
 
