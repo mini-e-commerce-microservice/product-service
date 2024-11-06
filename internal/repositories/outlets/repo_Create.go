@@ -1,4 +1,4 @@
-package product_variant_values
+package outlets
 
 import (
 	"context"
@@ -8,11 +8,8 @@ import (
 )
 
 func (r *repository) Create(ctx context.Context, input CreateInput) (output CreateOutput, err error) {
-	query := r.sq.Insert("product_variant_values").Columns(
-		"product_variant_id", "value",
-	).Values(
-		input.Data.ProductVariantID, input.Data.Value,
-	).Suffix("RETURNING id")
+	columns, values := collection.GetTagsWithValues(input.Data, "db", "id")
+	query := r.sq.Insert("outlets").Columns(columns...).Values(values...).Suffix("RETURNING id")
 
 	rdbms := input.Tx
 	if input.Tx == nil {
@@ -28,9 +25,8 @@ func (r *repository) Create(ctx context.Context, input CreateInput) (output Crea
 
 type CreateInput struct {
 	Tx   wsqlx.ReadQuery
-	Data models.ProductVariantValue
+	Data models.Outlet
 }
-
 type CreateOutput struct {
 	ID int64
 }

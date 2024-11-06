@@ -4,7 +4,7 @@ import (
 	"github.com/SyaibanAhmadRamadhan/go-collection/generic"
 	wsqlx "github.com/SyaibanAhmadRamadhan/sqlx-wrapper"
 	"github.com/guregu/null/v5"
-	"github.com/mini-e-commerce-microservice/product-service/internal/model"
+	"github.com/mini-e-commerce-microservice/product-service/internal/models"
 	"github.com/mini-e-commerce-microservice/product-service/internal/util/primitive"
 )
 
@@ -24,7 +24,7 @@ type CreateProductInput struct {
 	// fill by business logic
 	isUsedVariant      bool
 	sizeGuideImageName *string
-	subCategoryItem    model.SubCategoryItem
+	subCategoryItem    models.SubCategoryItem
 }
 
 type CreateProductInputProductItem struct {

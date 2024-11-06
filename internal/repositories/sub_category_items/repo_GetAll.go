@@ -7,7 +7,7 @@ import (
 	wsqlx "github.com/SyaibanAhmadRamadhan/sqlx-wrapper"
 	"github.com/guregu/null/v5"
 	"github.com/jmoiron/sqlx"
-	"github.com/mini-e-commerce-microservice/product-service/internal/model"
+	"github.com/mini-e-commerce-microservice/product-service/internal/models"
 	"github.com/mini-e-commerce-microservice/product-service/internal/util/primitive"
 )
 
@@ -26,11 +26,11 @@ func (r *repository) GetAll(ctx context.Context, input GetAllInput) (output GetA
 	}
 
 	output = GetAllOutput{
-		Items: make([]model.SubCategoryItem, 0),
+		Items: make([]models.SubCategoryItem, 0),
 	}
 	paginationOutput, err := r.rdbms.QuerySqPagination(ctx, queryCount, query, wsqlx.PaginationInput(input.Pagination), func(rows *sqlx.Rows) (err error) {
 		for rows.Next() {
-			data := model.SubCategoryItem{}
+			data := models.SubCategoryItem{}
 			err = rows.StructScan(&data)
 			if err != nil {
 				return collection.Err(err)
@@ -56,5 +56,5 @@ type GetAllInput struct {
 
 type GetAllOutput struct {
 	Pagination primitive.PaginationOutput
-	Items      []model.SubCategoryItem
+	Items      []models.SubCategoryItem
 }

@@ -3,14 +3,14 @@ CREATE TYPE product_condition AS ENUM ('new', 'second-hand');
 CREATE TABLE products
 (
     id                bigserial primary key,
-    user_id           bigint            not null,
-    name              varchar(255)      NOT NULL,
+    outlet_id         bigint references outlets (id) on delete cascade not null,
+    name              varchar(255)                                     NOT NULL,
     description       text,
-    product_condition product_condition NOT NULL,
-    is_used_variant   boolean           NOT NULL,
-    minimum_purchase  integer           not null,
+    product_condition product_condition                                NOT NULL,
+    is_used_variant   boolean                                          NOT NULL,
+    minimum_purchase  integer                                          not null,
     size_guide_image  varchar(255),
-    created_at        TIMESTAMPTZ       NOT NULL,
-    updated_at        TIMESTAMPTZ       NOT NULL,
+    created_at        TIMESTAMPTZ                                      NOT NULL,
+    updated_at        TIMESTAMPTZ                                      NOT NULL,
     deleted_at        TIMESTAMPTZ
 )

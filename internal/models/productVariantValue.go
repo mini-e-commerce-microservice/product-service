@@ -1,4 +1,4 @@
-package model
+package models
 
 type ProductVariantValue struct {
 	ID               int64  `db:"id"`

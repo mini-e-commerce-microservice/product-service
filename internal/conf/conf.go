@@ -103,8 +103,8 @@ func LoadJwtConf() *secret_proto.Jwt {
 	return jwtConf
 }
 
-func LoadAppConf() *secret_proto.ProductService {
-	appConf := &secret_proto.ProductService{}
+func LoadAppConf() *secret_proto.SellerService {
+	appConf := &secret_proto.SellerService{}
 	if flag.Lookup("test.v") != nil {
 		err := faker.FakeData(&appConf)
 		if err != nil {
@@ -112,7 +112,7 @@ func LoadAppConf() *secret_proto.ProductService {
 		}
 		return appConf
 	}
-	err := openVaultClient("product-service", "kv", appConf)
+	err := openVaultClient("seller-service", "kv", appConf)
 	if err != nil {
 		panic(err)
 	}

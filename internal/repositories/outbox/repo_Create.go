@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"github.com/SyaibanAhmadRamadhan/go-collection"
 	wsqlx "github.com/SyaibanAhmadRamadhan/sqlx-wrapper"
-	"github.com/mini-e-commerce-microservice/product-service/internal/model"
+	"github.com/mini-e-commerce-microservice/product-service/internal/models"
 	"time"
 )
 
@@ -32,5 +32,5 @@ func (r *repository) Create(ctx context.Context, input CreateInput) (err error) 
 
 type CreateInput struct {
 	Tx   wsqlx.WriterCommand
-	Data model.Outbox
+	Data models.Outbox
 }

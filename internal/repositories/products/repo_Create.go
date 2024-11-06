@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/SyaibanAhmadRamadhan/go-collection"
 	wsqlx "github.com/SyaibanAhmadRamadhan/sqlx-wrapper"
-	"github.com/mini-e-commerce-microservice/product-service/internal/model"
+	"github.com/mini-e-commerce-microservice/product-service/internal/models"
 	"time"
 )
 
@@ -12,10 +12,10 @@ func (r *repository) Create(ctx context.Context, input CreateInput) (output Crea
 	timeNow := time.Now().UTC()
 
 	query := r.sq.Insert("products").Columns(
-		"name", "user_id", "description", "product_condition", "minimum_purchase", "size_guide_image",
+		"name", "outlet_id", "description", "product_condition", "minimum_purchase", "size_guide_image",
 		"is_used_variant", "created_at", "updated_at",
 	).Values(
-		input.Data.Name, input.Data.UserID, input.Data.Description, input.Data.ProductCondition, input.Data.MinimumPurchase, input.Data.SizeGuideImage,
+		input.Data.Name, input.Data.OutletID, input.Data.Description, input.Data.ProductCondition, input.Data.MinimumPurchase, input.Data.SizeGuideImage,
 		input.Data.IsUsedVariant, timeNow, timeNow,
 	).Suffix("RETURNING id")
 
@@ -33,7 +33,7 @@ func (r *repository) Create(ctx context.Context, input CreateInput) (output Crea
 
 type CreateInput struct {
 	Tx   wsqlx.ReadQuery
-	Data model.Product
+	Data models.Product
 }
 
 type CreateOutput struct {

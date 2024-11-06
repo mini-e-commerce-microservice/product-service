@@ -4,14 +4,16 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/SyaibanAhmadRamadhan/go-collection"
 	"github.com/SyaibanAhmadRamadhan/go-collection/generic"
 	s3wrapper "github.com/SyaibanAhmadRamadhan/go-s3-wrapper"
 	wsqlx "github.com/SyaibanAhmadRamadhan/sqlx-wrapper"
 	"github.com/guregu/null/v5"
-	"github.com/mini-e-commerce-microservice/product-service/internal/model"
+	"github.com/mini-e-commerce-microservice/product-service/internal/models"
 	"github.com/mini-e-commerce-microservice/product-service/internal/repositories"
 	"github.com/mini-e-commerce-microservice/product-service/internal/repositories/outbox"
+	"github.com/mini-e-commerce-microservice/product-service/internal/repositories/outlets"
 	"github.com/mini-e-commerce-microservice/product-service/internal/repositories/product_medias"
 	"github.com/mini-e-commerce-microservice/product-service/internal/repositories/product_variant_items"
 	"github.com/mini-e-commerce-microservice/product-service/internal/repositories/product_variant_values"
@@ -27,10 +29,20 @@ import (
 // CreateProduct
 //
 // List error: ErrOnlyChooseOnePrimaryProduct, ErrOnlyChooseOnePrimaryMedia, ErrMustHavePrimaryMedia, ErrMustHavePrimaryProduct,
-// ErrInvalidSubCategoryItem, ErrMustHaveSizeGuide, ErrVariantValue1IsRequired, ErrVariantValue2IsRequired
+// ErrInvalidSubCategoryItem, ErrMustHaveSizeGuide, ErrVariantValue1IsRequired, ErrVariantValue2IsRequired, ErrOutletNotFound
 func (s *service) CreateProduct(ctx context.Context, input CreateProductInput) (output CreateProductOutput, err error) {
 	err = s.validateCreateProduct(ctx, &input)
 	if err != nil {
+		return output, collection.Err(err)
+	}
+
+	outletOutput, err := s.outletRepository.FindOne(ctx, outlets.FindOneInput{
+		UserID: null.IntFrom(input.UserID),
+	})
+	if err != nil {
+		if errors.Is(err, repositories.ErrDataNotFound) {
+			err = errors.Join(err, ErrOutletNotFound)
+		}
 		return output, collection.Err(err)
 	}
 
@@ -45,8 +57,8 @@ func (s *service) CreateProduct(ctx context.Context, input CreateProductInput) (
 		func(ctx context.Context, tx wsqlx.Rdbms) (err error) {
 			outputCreateProduct, err := s.productRepository.Create(ctx, products.CreateInput{
 				Tx: tx,
-				Data: model.Product{
-					UserID:           input.UserID,
+				Data: models.Product{
+					OutletID:         outletOutput.Data.ID,
 					Name:             input.Name,
 					Description:      input.Description,
 					ProductCondition: input.Condition,
@@ -79,7 +91,7 @@ func (s *service) CreateProduct(ctx context.Context, input CreateProductInput) (
 				eg.Go(func() (err error) {
 					createProductVariant1Output, err = s.productVariantRepository.Create(ctx, product_variants.CreateInput{
 						Tx: tx,
-						Data: model.ProductVariant{
+						Data: models.ProductVariant{
 							ProductID: outputCreateProduct.ID,
 							Name:      input.VariantName1.String,
 						},
@@ -95,7 +107,7 @@ func (s *service) CreateProduct(ctx context.Context, input CreateProductInput) (
 				eg.Go(func() (err error) {
 					createProductVariant2Output, err = s.productVariantRepository.Create(ctx, product_variants.CreateInput{
 						Tx: tx,
-						Data: model.ProductVariant{
+						Data: models.ProductVariant{
 							ProductID: outputCreateProduct.ID,
 							Name:      input.VariantName2.String,
 						},
@@ -110,6 +122,7 @@ func (s *service) CreateProduct(ctx context.Context, input CreateProductInput) (
 			if err = eg.Wait(); err != nil {
 				return collection.Err(err)
 			}
+			fmt.Println(createProductVariant1Output)
 
 			insertVariantValuesInput, err := input.toInsertProductVariantValuesInput(tx, createProductVariant1Output.ID, createProductVariant2Output.ID)
 			if err != nil {
@@ -119,6 +132,7 @@ func (s *service) CreateProduct(ctx context.Context, input CreateProductInput) (
 			if err != nil {
 				return collection.Err(err)
 			}
+			fmt.Println(insertVariantValuesOutput.productVariantValues.Load("blue"))
 
 			for _, item := range input.ProductItems {
 				eg.Go(func() (err error) {
@@ -127,33 +141,36 @@ func (s *service) CreateProduct(ctx context.Context, input CreateProductInput) (
 						productVariantValue1ID       *int64
 						productVariantValue2ID       *int64
 						image                        *string
-						outboxPayloadProductVariant1 *model.OutboxPayloadProductVariant
-						outboxPayloadProductVariant2 *model.OutboxPayloadProductVariant
+						outboxPayloadProductVariant1 *models.OutboxPayloadProductVariant
+						outboxPayloadProductVariant2 *models.OutboxPayloadProductVariant
 					)
 
-					val, ok := insertVariantValuesOutput.productVariantValues.Load(item.VariantValue1.String)
+					fmt.Println(insertVariantValuesOutput.productVariantValues.Load(item.VariantValue1.String))
+					val1, ok := insertVariantValuesOutput.productVariantValues.Load(item.VariantValue1.String)
 					if ok {
-						outboxPayloadProductVariant1 = &model.OutboxPayloadProductVariant{
+						outboxPayloadProductVariant1 = &models.OutboxPayloadProductVariant{
 							Name:  input.VariantName1.String,
 							Value: item.VariantValue1.String,
 						}
-						productVariantValue1ID = &val
+						productVariantValue1ID = &val1
 					}
-					val, ok = insertVariantValuesOutput.productVariantValues.Load(item.VariantValue2.String)
+					val2, ok := insertVariantValuesOutput.productVariantValues.Load(item.VariantValue2.String)
 					if ok {
-						outboxPayloadProductVariant2 = &model.OutboxPayloadProductVariant{
+						outboxPayloadProductVariant2 = &models.OutboxPayloadProductVariant{
 							Name:  input.VariantName2.String,
 							Value: item.VariantValue2.String,
 						}
-						productVariantValue2ID = &val
+						productVariantValue2ID = &val2
 					}
 					if item.Image.Valid {
 						image = &item.Image.V.GeneratedFileName
 					}
 
+					fmt.Println(*productVariantValue1ID)
+
 					productVariantItemCreateOutput, err := s.productVariantItemRepository.Create(ctx, product_variant_items.CreateInput{
 						Tx: tx,
-						Data: model.ProductVariantItem{
+						Data: models.ProductVariantItem{
 							ProductID:              outputCreateProduct.ID,
 							ProductVariantValue1ID: productVariantValue1ID,
 							ProductVariantValue2ID: productVariantValue2ID,
@@ -174,36 +191,36 @@ func (s *service) CreateProduct(ctx context.Context, input CreateProductInput) (
 						return collection.Err(err)
 					}
 
-					payloadOutboxProduct := model.OutboxPayloadProduct{
-						ID:                  productVariantItemCreateOutput.ID,
-						UserID:              input.UserID,
-						Variant1:            null.ValueFromPtr(outboxPayloadProductVariant1),
-						Variant2:            null.ValueFromPtr(outboxPayloadProductVariant2),
-						SubCategoryItemName: input.subCategoryItem.Name,
-						Name:                input.Name,
-						Description:         input.Name,
-						Price:               item.Price,
-						Stock:               item.Stock,
-						Sku:                 item.SKU.Ptr(),
-						Weight:              item.Weight,
-						PackageLength:       item.PackageLength,
-						PackageWidth:        item.PackageWidth,
-						PackageHeight:       item.PackageHeight,
-						DimensionalWeight:   item.dimensionalWeight,
-						IsActive:            item.IsActive,
-						ProductCondition:    input.Condition,
-						MinimumPurchase:     input.MinimumPurchase,
-						SizeGuideImage:      input.sizeGuideImageName,
-						CreatedAt:           time.Now().UTC(),
-						UpdatedAt:           time.Now().UTC(),
-					}
 					err = s.outboxRepository.Create(ctx, outbox.CreateInput{
 						Tx: tx,
-						Data: model.Outbox{
+						Data: models.Outbox{
 							AggregateID:   productVariantItemCreateOutput.ID,
 							AggregateType: string(outbox.AggregateTypeProduct),
-							Payload:       payloadOutboxProduct,
-							TraceParent:   util.GetTraceParent(ctx),
+							Payload: models.OutboxPayloadProduct{
+								ID:                  productVariantItemCreateOutput.ID,
+								OutletID:            outletOutput.Data.ID,
+								UserID:              input.UserID,
+								Variant1:            null.ValueFromPtr(outboxPayloadProductVariant1),
+								Variant2:            null.ValueFromPtr(outboxPayloadProductVariant2),
+								SubCategoryItemName: input.subCategoryItem.Name,
+								Name:                input.Name,
+								Description:         input.Name,
+								Price:               item.Price,
+								Stock:               item.Stock,
+								Sku:                 item.SKU.Ptr(),
+								Weight:              item.Weight,
+								PackageLength:       item.PackageLength,
+								PackageWidth:        item.PackageWidth,
+								PackageHeight:       item.PackageHeight,
+								DimensionalWeight:   item.dimensionalWeight,
+								IsActive:            item.IsActive,
+								ProductCondition:    input.Condition,
+								MinimumPurchase:     input.MinimumPurchase,
+								SizeGuideImage:      input.sizeGuideImageName,
+								CreatedAt:           time.Now().UTC(),
+								UpdatedAt:           time.Now().UTC(),
+							},
+							TraceParent: util.GetTraceParent(ctx),
 						},
 					})
 					if err != nil {
@@ -238,7 +255,7 @@ func (s *service) insertProductVariantValues(ctx context.Context, input insertPr
 			eg.Go(func() (err error) {
 				productVariantValueOutput, err := s.productVariantValueRepository.Create(ctx, product_variant_values.CreateInput{
 					Tx: input.tx,
-					Data: model.ProductVariantValue{
+					Data: models.ProductVariantValue{
 						ProductVariantID: input.productVariantID1,
 						Value:            value1,
 					},
@@ -258,7 +275,7 @@ func (s *service) insertProductVariantValues(ctx context.Context, input insertPr
 			eg.Go(func() (err error) {
 				productVariantValueOutput, err := s.productVariantValueRepository.Create(ctx, product_variant_values.CreateInput{
 					Tx: input.tx,
-					Data: model.ProductVariantValue{
+					Data: models.ProductVariantValue{
 						ProductVariantID: input.productVariantID2,
 						Value:            value2,
 					},
@@ -279,9 +296,9 @@ func (s *service) insertProductVariantValues(ctx context.Context, input insertPr
 }
 
 func (s *service) insertProductMedia(ctx context.Context, input insertProductMediaInput) (err error) {
-	productMedias := make([]model.ProductMedia, 0, len(input.items))
+	productMedias := make([]models.ProductMedia, 0, len(input.items))
 	for _, item := range input.items {
-		productMedias = append(productMedias, model.ProductMedia{
+		productMedias = append(productMedias, models.ProductMedia{
 			ProductID:      input.productID,
 			Media:          item.fileUpload.GeneratedFileName,
 			MediaType:      item.fileUpload.MimeType.MediaType(),

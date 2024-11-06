@@ -97,6 +97,8 @@ func (h *handler) V1ProductPost(w http.ResponseWriter, r *http.Request) {
 			h.httpOtel.Err(w, r, http.StatusBadRequest, err, product.ErrVariantValue1IsRequired.Error())
 		case errors.Is(err, product.ErrVariantValue2IsRequired):
 			h.httpOtel.Err(w, r, http.StatusBadRequest, err, product.ErrVariantValue2IsRequired.Error())
+		case errors.Is(err, product.ErrOutletNotFound):
+			h.httpOtel.Err(w, r, http.StatusBadRequest, err, product.ErrOutletNotFound.Error())
 		default:
 			h.httpOtel.Err(w, r, http.StatusInternalServerError, err)
 		}

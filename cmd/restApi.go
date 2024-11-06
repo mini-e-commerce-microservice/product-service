@@ -25,6 +25,7 @@ var restApiCmd = &cobra.Command{
 		server := presentations.New(&presentations.Presenter{
 			ProductService:     dependency.ProductService,
 			JwtAccessTokenConf: jwtConf.AccessToken,
+			OutletService:      dependency.OutletService,
 			Port:               int(appConf.AppPort),
 		})
 

@@ -1,4 +1,4 @@
-package sub_category_items
+package outlets
 
 import (
 	"context"
@@ -12,10 +12,13 @@ import (
 	"github.com/mini-e-commerce-microservice/product-service/internal/repositories"
 )
 
-func (r *repository) Get(ctx context.Context, input GetInput) (output GetOutput, err error) {
-	query := r.sq.Select("id", "category_id", "sub_category_id", "name", "size_guide").From("sub_category_items")
+func (r *repository) FindOne(ctx context.Context, input FindOneInput) (output FindOneOutput, err error) {
+	query := r.sq.Select("*").From("outlets")
 	if input.ID.Valid {
 		query = query.Where(squirrel.Eq{"id": input.ID.Int64})
+	}
+	if input.UserID.Valid {
+		query = query.Where(squirrel.Eq{"user_id": input.UserID.Int64})
 	}
 
 	err = r.rdbms.QueryRowSq(ctx, query, wsqlx.QueryRowScanTypeStruct, &output.Data)
@@ -25,13 +28,15 @@ func (r *repository) Get(ctx context.Context, input GetInput) (output GetOutput,
 		}
 		return output, collection.Err(err)
 	}
+
 	return
 }
 
-type GetInput struct {
-	ID null.Int
+type FindOneInput struct {
+	ID     null.Int
+	UserID null.Int
 }
 
-type GetOutput struct {
-	Data models.SubCategoryItem
+type FindOneOutput struct {
+	Data models.Outlet
 }

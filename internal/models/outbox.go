@@ -1,4 +1,4 @@
-package model
+package models
 
 import (
 	"github.com/guregu/null/v5"
@@ -17,6 +17,7 @@ type Outbox struct {
 type OutboxPayloadProduct struct {
 	ID                  int64                                   `json:"id"`
 	UserID              int64                                   `json:"user_id"`
+	OutletID            int64                                   `json:"outlet_id"`
 	Variant1            null.Value[OutboxPayloadProductVariant] `json:"variant_1"`
 	Variant2            null.Value[OutboxPayloadProductVariant] `json:"variant_2"`
 	SubCategoryItemName string                                  `json:"sub_category_item_name"`

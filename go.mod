@@ -4,7 +4,7 @@ go 1.22.5
 
 require (
 	github.com/Masterminds/squirrel v1.5.4
-	github.com/SyaibanAhmadRamadhan/go-collection v1.241019.2240
+	github.com/SyaibanAhmadRamadhan/go-collection v1.241025.2333
 	github.com/SyaibanAhmadRamadhan/go-s3-wrapper v1.240914.1119
 	github.com/SyaibanAhmadRamadhan/go-s3-wrapper/minio v1.240914.1121
 	github.com/SyaibanAhmadRamadhan/http-wrapper v1.241010.1031

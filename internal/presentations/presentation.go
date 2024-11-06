@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/mini-e-commerce-microservice/product-service/generated/proto/secret_proto"
 	"github.com/mini-e-commerce-microservice/product-service/internal/presentations/handler"
+	"github.com/mini-e-commerce-microservice/product-service/internal/services/outlet"
 	"github.com/mini-e-commerce-microservice/product-service/internal/services/product"
 	"net/http"
 	"time"
@@ -15,6 +16,7 @@ import (
 type Presenter struct {
 	Port               int
 	ProductService     product.Service
+	OutletService      outlet.Service
 	JwtAccessTokenConf *secret_proto.JwtAccessToken
 }
 
@@ -34,6 +36,7 @@ func New(p *Presenter) *http.Server {
 	handler.Init(r, handler.Opt{
 		JwtAccessTokenConf: p.JwtAccessTokenConf,
 		ProductService:     p.ProductService,
+		OutletService:      p.OutletService,
 	})
 
 	s := &http.Server{

@@ -2,7 +2,6 @@ package handler
 
 import (
 	"errors"
-	"fmt"
 	"github.com/SyaibanAhmadRamadhan/go-collection"
 	"github.com/mini-e-commerce-microservice/product-service/generated/api"
 	"github.com/mini-e-commerce-microservice/product-service/generated/proto/jwt_claims_proto"
@@ -91,14 +90,6 @@ func (h *handler) getUserFromBearerAuth(w http.ResponseWriter, r *http.Request, 
 	err := authAccessTokenJWT.ClaimsHS256(bearerSplit[1], h.jwtAccessTokenConf.Key)
 	if err != nil {
 		h.httpOtel.Err(w, r, http.StatusUnauthorized, collection.Err(err))
-		return nil, false
-	}
-
-	if authAccessTokenJWT.RegisterAs != 1 && mustMerchantUser {
-		h.httpOtel.Err(w, r, http.StatusForbidden,
-			collection.Err(fmt.Errorf("account with register as %d is not allowed to create products", authAccessTokenJWT.RegisterAs)),
-			"your account is not a seller or merchant",
-		)
 		return nil, false
 	}
 

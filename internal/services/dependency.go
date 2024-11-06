@@ -8,12 +8,14 @@ import (
 	"github.com/mini-e-commerce-microservice/product-service/internal/conf"
 	"github.com/mini-e-commerce-microservice/product-service/internal/infra"
 	"github.com/mini-e-commerce-microservice/product-service/internal/repositories/outbox"
+	"github.com/mini-e-commerce-microservice/product-service/internal/repositories/outlets"
 	"github.com/mini-e-commerce-microservice/product-service/internal/repositories/product_medias"
 	"github.com/mini-e-commerce-microservice/product-service/internal/repositories/product_variant_items"
 	"github.com/mini-e-commerce-microservice/product-service/internal/repositories/product_variant_values"
 	"github.com/mini-e-commerce-microservice/product-service/internal/repositories/product_variants"
 	"github.com/mini-e-commerce-microservice/product-service/internal/repositories/products"
 	"github.com/mini-e-commerce-microservice/product-service/internal/repositories/sub_category_items"
+	"github.com/mini-e-commerce-microservice/product-service/internal/services/outlet"
 	"github.com/mini-e-commerce-microservice/product-service/internal/services/product"
 	"github.com/mini-e-commerce-microservice/product-service/internal/util/primitive"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
@@ -21,9 +23,10 @@ import (
 
 type Dependency struct {
 	ProductService product.Service
+	OutletService  outlet.Service
 }
 
-func NewDependency(appConf *secret_proto.ProductService) (*Dependency, primitive.CloseFn) {
+func NewDependency(appConf *secret_proto.SellerService) (*Dependency, primitive.CloseFn) {
 	otelConf := conf.LoadOtelConf()
 	minioConf := conf.LoadMinioConf()
 
@@ -41,9 +44,11 @@ func NewDependency(appConf *secret_proto.ProductService) (*Dependency, primitive
 	productVariantValueRepository := product_variant_values.New(rdbms)
 	productVariantItemRepository := product_variant_items.New(rdbms)
 	subCategoryItemRepository := sub_category_items.New(rdbms)
+	outletRepository := outlets.New(rdbms)
 
 	// SERVICE LAYER
 	productService := product.New(product.ServiceOption{
+		OutletRepository:              outletRepository,
 		SubCategoryItemRepository:     subCategoryItemRepository,
 		ProductRepository:             productRepository,
 		ProductMediaRepository:        productMediaRepository,
@@ -55,8 +60,15 @@ func NewDependency(appConf *secret_proto.ProductService) (*Dependency, primitive
 		DBTransaction:                 rdbms,
 		MinioConf:                     minioConf,
 	})
+	outletService := outlet.New(outlet.ServiceOption{
+		OutletRepository: outletRepository,
+		S3:               s3Minio,
+		DBTransaction:    rdbms,
+		MinioConf:        minioConf,
+	})
 
 	dependency := &Dependency{
+		OutletService:  outletService,
 		ProductService: productService,
 	}
 

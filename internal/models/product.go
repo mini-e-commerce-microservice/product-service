@@ -1,10 +1,10 @@
-package model
+package models
 
 import "time"
 
 type Product struct {
 	ID               int64   `db:"id"`
-	UserID           int64   `db:"user_id"`
+	OutletID         int64   `db:"outlet_id"`
 	Name             string  `db:"name"`
 	Description      string  `db:"description"`
 	ProductCondition string  `db:"product_condition"`

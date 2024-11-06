@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/SyaibanAhmadRamadhan/go-collection"
 	wsqlx "github.com/SyaibanAhmadRamadhan/sqlx-wrapper"
-	"github.com/mini-e-commerce-microservice/product-service/internal/model"
+	"github.com/mini-e-commerce-microservice/product-service/internal/models"
 )
 
 func (r *repository) Creates(ctx context.Context, input CreatesInput) (err error) {
@@ -32,6 +32,6 @@ func (r *repository) Creates(ctx context.Context, input CreatesInput) (err error
 }
 
 type CreatesInput struct {
-	Data []model.ProductMedia
+	Data []models.ProductMedia
 	Tx   wsqlx.WriterCommand
 }

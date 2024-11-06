@@ -6,6 +6,8 @@ github.com/Masterminds/squirrel v1.5.4 h1:uUcX/aBc8O7Fg9kaISIUsHXdKuqehiXAMQTYX8
 github.com/Masterminds/squirrel v1.5.4/go.mod h1:NNaOrjSoIDfDA40n7sr2tPNZRfjzjA400rg+riTZj10=
 github.com/SyaibanAhmadRamadhan/go-collection v1.241019.2240 h1:j1PA6IGSwflZEZ1AmBrapF2m+j6KcUQVy20+7/duuiY=
 github.com/SyaibanAhmadRamadhan/go-collection v1.241019.2240/go.mod h1:/TjBnG/JdgUGV+VRE3Gn+kl8r3LoOvwctwtZz13tJHM=
+github.com/SyaibanAhmadRamadhan/go-collection v1.241025.2333 h1:IFk0h6b43wqExf3y7pCDF+2nqom12TWMeU3WP7LnL8A=
+github.com/SyaibanAhmadRamadhan/go-collection v1.241025.2333/go.mod h1:/TjBnG/JdgUGV+VRE3Gn+kl8r3LoOvwctwtZz13tJHM=
 github.com/SyaibanAhmadRamadhan/go-s3-wrapper v1.240914.1119 h1:mcqvTsEindoW9yc9KOpiwFpFVAFszsMSyPtBD2pg6Vo=
 github.com/SyaibanAhmadRamadhan/go-s3-wrapper v1.240914.1119/go.mod h1:se7qYbeALfCS8nLcSWBWOUacfCmn4levAIH3r53cZTc=
 github.com/SyaibanAhmadRamadhan/go-s3-wrapper/minio v1.240914.1121 h1:0to/emDFpzbBMgVKMx8I65lMrRJHqFI+9xl94RC8FwQ=

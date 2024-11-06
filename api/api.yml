@@ -41,8 +41,72 @@ paths:
                 $ref: '#/components/schemas/Error'
       tags:
         - product
+  /v1/seller:
+    post:
+      operationId: V1SellerPost
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V1SellerPostRequestBody'
+      responses:
+        '201':
+          description: CREATED
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V1SellerPostResponse'
+        '400':
+          description: BAD_REQUEST
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '500':
+          description: INTERNAL SERVER ERROR
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: NOT FOUND
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - seller
 components:
   schemas:
+    V1SellerPostResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        logo_upload:
+          $ref: '#/components/schemas/FileUploadResponse'
+      required:
+        - id
+    V1SellerPostRequestBody:
+      type: object
+      properties:
+        logo:
+          $ref: '#/components/schemas/FileUploadRequest'
+        name:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: "required,max=100"
+        slogan:
+          type: string
+          nullable: true
+          x-oapi-codegen-extra-tags:
+            validate: "omitempty,max=255"
+        description:
+          type: string
+          nullable: true
+      required:
+        - name
     V1ProductPostResponse:
       type: object
       properties:
