@@ -12,9 +12,9 @@ type ProductVariantItem struct {
 	Stock                  int32      `db:"stock"`
 	Sku                    *string    `db:"sku"`
 	Weight                 int32      `db:"weight"`
-	PackageLength          float64    `db:"package_length"`
-	PackageWidth           float64    `db:"package_width"`
-	PackageHeight          float64    `db:"package_height"`
+	PackageLength          int32      `db:"package_length"`
+	PackageWidth           int32      `db:"package_width"`
+	PackageHeight          int32      `db:"package_height"`
 	DimensionalWeight      float64    `db:"dimensional_weight"`
 	IsActive               bool       `db:"is_active"`
 	Image                  *string    `db:"image"`

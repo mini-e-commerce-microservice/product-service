@@ -215,22 +215,22 @@ components:
           x-oapi-codegen-extra-tags:
             validate: "min=1"
         package_length:
-          type: number
-          format: double
+          type: integer
+          format: int32
           example: 10
           description: format in cm
           x-oapi-codegen-extra-tags:
             validate: "min=1"
         package_width:
-          type: number
-          format: double
+          type: integer
+          format: int32
           example: 10
           description: format in cm
           x-oapi-codegen-extra-tags:
             validate: "min=1"
         package_height:
-          type: number
-          format: double
+          type: integer
+          format: int32
           example: 10
           description: format in cm
           x-oapi-codegen-extra-tags:

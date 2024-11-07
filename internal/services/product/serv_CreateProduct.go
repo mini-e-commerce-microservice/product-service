@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/SyaibanAhmadRamadhan/go-collection"
 	"github.com/SyaibanAhmadRamadhan/go-collection/generic"
 	s3wrapper "github.com/SyaibanAhmadRamadhan/go-s3-wrapper"
@@ -122,7 +121,6 @@ func (s *service) CreateProduct(ctx context.Context, input CreateProductInput) (
 			if err = eg.Wait(); err != nil {
 				return collection.Err(err)
 			}
-			fmt.Println(createProductVariant1Output)
 
 			insertVariantValuesInput, err := input.toInsertProductVariantValuesInput(tx, createProductVariant1Output.ID, createProductVariant2Output.ID)
 			if err != nil {
@@ -132,7 +130,6 @@ func (s *service) CreateProduct(ctx context.Context, input CreateProductInput) (
 			if err != nil {
 				return collection.Err(err)
 			}
-			fmt.Println(insertVariantValuesOutput.productVariantValues.Load("blue"))
 
 			for _, item := range input.ProductItems {
 				eg.Go(func() (err error) {
@@ -145,7 +142,6 @@ func (s *service) CreateProduct(ctx context.Context, input CreateProductInput) (
 						outboxPayloadProductVariant2 *models.OutboxPayloadProductVariant
 					)
 
-					fmt.Println(insertVariantValuesOutput.productVariantValues.Load(item.VariantValue1.String))
 					val1, ok := insertVariantValuesOutput.productVariantValues.Load(item.VariantValue1.String)
 					if ok {
 						outboxPayloadProductVariant1 = &models.OutboxPayloadProductVariant{
@@ -165,8 +161,6 @@ func (s *service) CreateProduct(ctx context.Context, input CreateProductInput) (
 					if item.Image.Valid {
 						image = &item.Image.V.GeneratedFileName
 					}
-
-					fmt.Println(*productVariantValue1ID)
 
 					productVariantItemCreateOutput, err := s.productVariantItemRepository.Create(ctx, product_variant_items.CreateInput{
 						Tx: tx,

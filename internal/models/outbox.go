@@ -27,9 +27,9 @@ type OutboxPayloadProduct struct {
 	Stock               int32                                   `json:"stock"`
 	Sku                 *string                                 `json:"sku"`
 	Weight              int32                                   `json:"weight"`
-	PackageLength       float64                                 `json:"package_length"`
-	PackageWidth        float64                                 `json:"package_width"`
-	PackageHeight       float64                                 `json:"package_height"`
+	PackageLength       int32                                   `json:"package_length"`
+	PackageWidth        int32                                   `json:"package_width"`
+	PackageHeight       int32                                   `json:"package_height"`
 	DimensionalWeight   float64                                 `json:"dimensional_weight"`
 	IsActive            bool                                    `json:"is_active"`
 	ProductCondition    string                                  `json:"product_condition"`

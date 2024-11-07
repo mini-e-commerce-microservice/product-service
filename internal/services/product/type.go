@@ -34,9 +34,9 @@ type CreateProductInputProductItem struct {
 	Stock            int32
 	SKU              null.String
 	Weight           int32
-	PackageLength    float64
-	PackageWidth     float64
-	PackageHeight    float64
+	PackageLength    int32
+	PackageWidth     int32
+	PackageHeight    int32
 	IsPrimaryProduct bool
 	IsActive         bool
 	Image            null.Value[primitive.PresignedFileUpload]
@@ -49,7 +49,7 @@ func (item *CreateProductInputProductItem) calculateDimensionalWeight(volumetric
 	if volumetricFactor == 0 {
 		volumetricFactor = 5000.0
 	}
-	item.dimensionalWeight = (item.PackageLength * item.PackageWidth * item.PackageHeight) / volumetricFactor
+	item.dimensionalWeight = float64(item.PackageLength*item.PackageWidth*item.PackageHeight) / volumetricFactor
 }
 
 type CreateProductInputProductMedia struct {
